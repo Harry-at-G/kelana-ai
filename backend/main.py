@@ -12,4 +12,3 @@ def print_trip_summary(destination, country, days, budget, currency, travel_mont
 
 # Using Function
 print_trip_summary("Japan","Japan",5,1500,"USD","December","Backpacker")
-#print_trip_summary("Bali",4,3000,"Family")
