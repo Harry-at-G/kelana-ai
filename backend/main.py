@@ -62,7 +62,19 @@ def create_trip(request: TripRequest):
 @app.get("/api/v1/trip-categories")
 def list_categories():
     return{
-        "Backpacker",  
-        "Standard",
-        "Luxury"
+        "Backpacker", "Standard", "Luxury"
+    }
+
+# a Get endpoint at the root path to list the recommendations
+@app.get("/api/v1/recommendations")
+def list_recommendations():
+    return{
+        "Tokyo Tower", "Mount Fuji", "Shibuya"
+    }
+
+# a Get endpoint at the root path to list the transportations
+@app.get("/api/v1/transportations")
+def list_transportations():
+    return{
+        "Bus", "Train", "Flight"
     }
