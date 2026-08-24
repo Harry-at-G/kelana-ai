@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from models.trip import Trip
 from database import SessionLocal, init_db
+from services.bedrock_service import get_ai_recommendation
 
 app = FastAPI()
 
@@ -36,32 +37,6 @@ from services.trip_service import (
     get_trip_category
 )
 
-# POST endpoint - receives JSON, returns JSON
-#@app.post("/api/v1/trips")
-#def create_trip(request: TripRequest):
-#      daily_budget = calculate_daily_budget(
-#        request.budget, request.days
-#    )
-#    category = get_trip_category(
-#        request.budget
-#    )
-#
-#    if category == "Backpacker":
-#        recommended_transportation = "Bus"
-#    elif category == "Standard":
-#        recommended_transportation = "Train"
-#    else: 
-#        recommended_transportation = "Flight"
-#    
-#    return {
-#        "destination" : request.destination,
-#        "days" : request.days,
-#        "budget" : request.budget,
-#        "daily_budget" : daily_budget,
-#        "category" : category,
-#        "recommendation_transport" : recommended_transportation,
-#    }
-
 # a Get endpoint at the root path to get list of the categories
 @app.get("/api/v1/trip-categories")
 def list_categories():
@@ -89,13 +64,21 @@ def create_trip(request: TripRequest):
     daily_budget = calculate_daily_budget(request.budget, request.days)
     category     = get_trip_category(request.budget)
 
+    ai_recommendation = get_ai_recommendation(
+        destination = request.destination,
+        days=request.days,
+        budget=request.budget,
+        travel_style= request.travel_style,
+    )
+
     # create a Trip ORM object
     trip = Trip(
-        destination  = request.destination,
-        days         = request.days,
-        budget       = request.budget,
-        category     = category,
-        daily_budget = daily_budget,
+        destination         = request.destination,
+        days                = request.days,
+        budget              = request.budget,
+        category            = category,
+        daily_budget        = daily_budget,
+        ai_recommendation   = ai_recommendation,
     )
 
     # save to PostgreSQL
@@ -150,3 +133,25 @@ def update_trip(id:int, budget:float):
     db.commit()
     db.close()
     return (f"Trip with id {id} updated successfully")    
+
+
+@app.put ("/api/v1/trips/{id}/generate")
+def update_trip_with_AI_recommendations(id:int, budget:float, travel_style:str):
+    db = SessionLocal()
+    trip=db.query(Trip).filter(Trip.id == id).first()
+    # handling if not found
+    if trip is None:
+        db.close()
+        raise HTTPException(status_code=404, detail=f"Trip with id {id} not found")
+    trip.budget = budget
+    trip.daily_budget = calculate_daily_budget(budget,trip.days)
+    trip.category = get_trip_category(budget)
+    trip.ai_recommendation = get_ai_recommendation(
+        destination = trip.destination,
+        days=trip.days,
+        budget=trip.budget,
+        travel_style= travel_style,
+    )
+    db.commit()
+    db.close()
+    return (f"Trip with id {id} updated with AI recommendation successfully")    
