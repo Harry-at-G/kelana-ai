@@ -44,11 +44,11 @@ def get_ai_recommendation(
         f"Plan a {days}-day itinerary for {destination}.\n\n"
         f"Budget: USD {budget}\n\n"
         f"Travel Style: {travel_style}"
-        f"Include local food recommendations and transportation suggestions into the itinerary."
         f"Create 2-3 activities for the morning activities."
         f"Include cultural sites recommendations and local activities for the afternoon activities."
         f"Recommend dinner spots and nightlife activities for the evening activities."
         f"Include estimated daily budget."
+        f"Include local food recommendations and transportation suggestions into the itinerary."
         f"Format your response as Markdown with headers (##) and bullet lists (-)."
     )
 

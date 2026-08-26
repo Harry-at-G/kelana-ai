@@ -5,6 +5,16 @@ from services.bedrock_service import get_ai_recommendation
 
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 init_db()
 
 # a Get endpoint at the root path
