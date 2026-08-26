@@ -72,11 +72,59 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4">
-      {/* Header */}
-      <h1 className="text-4xl font-bold text-blue-500 mb-1">KelanaAI</h1>
-      <p className="text-gray-400 text-sm mb-8">Plan your next adventure</p>
+    <>
+    {/* Hero */}
+    <div className="w-full relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 min-h-64 flex flex-col items-center justify-center px-4 py-16">
+      {/* Decorative blobs */}
+      <div className="absolute -top-16 -left-16 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+      <div className="absolute -bottom-20 -right-10 w-80 h-80 bg-cyan-300/20 rounded-full blur-3xl" />
+      {/* Floating landmark silhouettes */}
+      <svg className="absolute bottom-0 left-0 right-0 w-full opacity-10" viewBox="0 0 800 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Eiffel Tower */}
+        <polygon points="80,120 90,60 100,120" fill="white"/>
+        <polygon points="85,60 95,20 105,60" fill="white"/>
+        <rect x="87" y="15" width="6" height="8" fill="white"/>
+        {/* Pyramid */}
+        <polygon points="180,120 220,50 260,120" fill="white"/>
+        {/* Pagoda */}
+        <rect x="340" y="90" width="40" height="30" fill="white"/>
+        <polygon points="335,90 360,70 385,90" fill="white"/>
+        <polygon points="338,70 360,52 382,70" fill="white"/>
+        <polygon points="342,52 360,38 378,52" fill="white"/>
+        {/* Big Ben */}
+        <rect x="480" y="60" width="30" height="60" fill="white"/>
+        <rect x="476" y="50" width="38" height="14" fill="white"/>
+        <polygon points="476,50 495,30 514,50" fill="white"/>
+        {/* Colosseum arch */}
+        <rect x="600" y="70" width="80" height="50" rx="2" fill="white"/>
+        <rect x="612" y="70" width="16" height="30" rx="8" fill="#3b82f6"/>
+        <rect x="636" y="70" width="16" height="30" rx="8" fill="#3b82f6"/>
+        <rect x="660" y="70" width="16" height="30" rx="8" fill="#3b82f6"/>
+        {/* Mountain */}
+        <polygon points="700,120 760,40 820,120" fill="white"/>
+        <polygon points="730,120 760,70 790,120" fill="white" opacity="0.6"/>
+      </svg>
 
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center gap-3 text-center">
+        <div className="flex items-center gap-2">
+          <span className="text-4xl">✈️</span>
+          <h1 className="text-4xl font-extrabold text-white tracking-tight drop-shadow">KelanaAI</h1>
+        </div>
+        <p className="text-blue-100 text-base max-w-sm">
+          Your AI-powered travel planner. Tell us where you want to go and we'll craft the perfect itinerary.
+        </p>
+        <div className="flex gap-3 mt-2 text-sm text-blue-100 font-medium">
+          <span>🌏 Any destination</span>
+          <span>·</span>
+          <span>💰 Any budget</span>
+          <span>·</span>
+          <span>🎒 Any style</span>
+        </div>
+      </div>
+    </div>
+
+    <main className="bg-gray-50 flex flex-col items-center py-12 px-4">
       {/* Form card */}
       <form
         onSubmit={handleSubmit}
@@ -233,10 +281,10 @@ export default function Home() {
                       ),
                       // Time-period sub-heading (### Morning) — dark bold
                       h3: ({ children }) => (
-                        <p className="text-xs font-bold text-gray-800 mt-3 mb-1">{children}</p>
+                        <p className="text-sm font-bold text-gray-800 mt-3 mb-1">{children}</p>
                       ),
                       h4: ({ children }) => (
-                        <p className="text-xs font-bold text-gray-800 mt-3 mb-1">{children}</p>
+                        <p className="text-sm font-bold text-gray-800 mt-3 mb-1">{children}</p>
                       ),
                       // Paragraphs — covers **Morning** used as bold-only line
                       p: ({ children }) => (
@@ -272,6 +320,23 @@ export default function Home() {
         </div>
       )}
     </main>
+
+    <footer className="w-full mt-12 border-t border-gray-200 bg-white">
+      <div className="max-w-md mx-auto px-4 py-6 flex flex-col items-center gap-4">
+        {/* Nav links */}
+        <nav className="flex gap-6 text-sm text-gray-500">
+          <a href="#" className="hover:text-blue-500 transition-colors">Home</a>
+          <a href="#" className="hover:text-blue-500 transition-colors">About</a>
+          <a href="#" className="hover:text-blue-500 transition-colors">Privacy Policy</a>
+          <a href="#" className="hover:text-blue-500 transition-colors">Contact</a>
+        </nav>
+        {/* Copyright */}
+        <p className="text-xs text-gray-400">
+          © {new Date().getFullYear()} KelanaAI. All rights reserved.
+        </p>
+      </div>
+    </footer>
+    </>
   );
 }
 
