@@ -1,4 +1,4 @@
-import { type Trip } from "../app/components/TripCard";
+import { type Trip } from "../components/TripCard";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 

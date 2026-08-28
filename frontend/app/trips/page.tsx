@@ -2,14 +2,17 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import TripCard, { type Trip } from "../components/TripCard";
+import TripCard, { type Trip } from "../../components/TripCard";
 import { listTrips } from "../../services/tripService";
+
+const PAGE_SIZE = 10;
 
 export default function MyTripsPage() {
   const [trips, setTrips]     = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
   const [query, setQuery]     = useState("");
+  const [page, setPage]       = useState(1);
 
   async function fetchTrips() {
     setLoading(true);
@@ -26,16 +29,23 @@ export default function MyTripsPage() {
 
   useEffect(() => { fetchTrips(); }, []);
 
-  // Filter by destination or category (stored travel style equivalent)
+  // Reset to page 1 whenever the search query changes
+  useEffect(() => { setPage(1); }, [query]);
+
+  // Filter by destination, category, or travel_style
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return trips;
     return trips.filter(
       (t) =>
         t.destination.toLowerCase().includes(q) ||
-        t.category.toLowerCase().includes(q)
+        t.category.toLowerCase().includes(q) ||
+        (t.travel_style?.toLowerCase().includes(q) ?? false)
     );
   }, [trips, query]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4">
@@ -149,15 +159,56 @@ export default function MyTripsPage() {
         )}
 
         {/* Trip list */}
-        {!loading && !error && filtered.length > 0 && (
-          <div className="flex flex-col gap-4">
-            {filtered.map((trip) => (
-              <TripCard key={trip.id} trip={trip} />
-            ))}
-          </div>
+        {!loading && !error && paginated.length > 0 && (
+          <>
+            {/* Result count */}
+            <p className="text-xs text-gray-400 mb-3">
+              Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} trip{filtered.length !== 1 ? "s" : ""}
+            </p>
+
+            <div className="flex flex-col gap-4">
+              {paginated.map((trip) => (
+                <TripCard key={trip.id} trip={trip} />
+              ))}
+            </div>
+
+            {/* Pagination controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  ← Prev
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`w-9 h-9 text-sm font-medium rounded-lg transition-colors shadow-sm ${
+                      p === page
+                        ? "bg-blue-400 text-white border border-blue-400"
+                        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </main>
   );
 }
-

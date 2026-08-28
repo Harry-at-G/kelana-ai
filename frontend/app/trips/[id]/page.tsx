@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
-import { type Trip, CATEGORY_COLOR } from "../../components/TripCard";
+import { type Trip, CATEGORY_COLOR, getDestinationFlag } from "../../../components/TripCard";
+
+const CATEGORY_ICON: Record<string, string> = {
+  Backpacker: "🎒",
+  Standard:   "⭐",
+  Luxury:     "💎",
+};
 import { getTrip } from "../../../services/tripService";
 
 /**
@@ -97,7 +103,8 @@ export default function TripDetailPage() {
                     })}
                   </span>
                 </div>
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${CATEGORY_COLOR[trip.category] ?? "bg-gray-100 text-gray-600"}`}>
+                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${CATEGORY_COLOR[trip.category] ?? "bg-gray-100 text-gray-600"}`}>
+                  <span>{CATEGORY_ICON[trip.category] ?? "📍"}</span>
                   {trip.category}
                 </span>
               </div>
@@ -105,7 +112,7 @@ export default function TripDetailPage() {
               <div className="grid grid-cols-3 gap-2 text-center">
                 <Stat label="Days"         value={String(trip.days)} />
                 <Stat label="Budget"       value={`USD ${trip.budget.toLocaleString()}`} />
-                <Stat label="Daily Budget" value={`USD ${trip.daily_budget.toFixed(0)}`} />
+                <Stat label="Daily Budget" value={`USD ${trip.daily_budget.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} />
               </div>
             </div>
 

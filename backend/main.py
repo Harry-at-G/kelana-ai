@@ -90,6 +90,7 @@ def create_trip(request: TripRequest):
         budget              = request.budget,
         category            = category,
         daily_budget        = daily_budget,
+        travel_style        = request.travel_style,
         ai_recommendation   = ai_recommendation,
     )
 
