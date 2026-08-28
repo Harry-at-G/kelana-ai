@@ -1,31 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-
-interface TripResult {
-  id: number;
-  destination: string;
-  days: number;
-  budget: number;
-  category: string;
-  daily_budget: number;
-  ai_recommendation: string;
-  created_at: string;
-}
+import { createTrip, type CreateTripPayload } from "../services/tripService";
+import { type Trip } from "./components/TripCard";
 
 const TRAVEL_STYLES = [
   "Adventure", "Backpacker", "Business", "Cultural", "Family", "Luxury", "Relaxed",
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [form, setForm] = useState({
     destination: "",
     budget: "",
     days: "",
     travel_style: "",
   });
-  const [result, setResult] = useState<TripResult | null>(null);
+  const [result, setResult] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,24 +35,15 @@ export default function Home() {
     setResult(null);
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/trips", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          destination: form.destination,
-          budget: parseFloat(form.budget),
-          days: parseInt(form.days, 10),
-          travel_style: form.travel_style,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data?.detail ?? `Error ${res.status}`);
-      }
-
-      const data: TripResult = await res.json();
+      const payload: CreateTripPayload = {
+        destination: form.destination,
+        budget: parseFloat(form.budget),
+        days: parseInt(form.days, 10),
+        travel_style: form.travel_style,
+      };
+      const data = await createTrip(payload);
       setResult(data);
+      router.push("/trips");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
