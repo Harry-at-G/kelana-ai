@@ -31,11 +31,15 @@ const USER_KEY  = "auth_user";
 export function saveSession(response: LoginResponse): void {
   localStorage.setItem(TOKEN_KEY, response.access_token);
   localStorage.setItem(USER_KEY,  JSON.stringify(response.user));
+  // Also write to a cookie so middleware can guard routes server-side
+  document.cookie = `auth_token=${response.access_token}; path=/; max-age=${60 * 60}; SameSite=Strict`;
 }
 
 export function clearSession(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  // Expire the cookie
+  document.cookie = "auth_token=; path=/; max-age=0; SameSite=Strict";
 }
 
 export function getToken(): string | null {

@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import TripCard, { type Trip } from "../../components/TripCard";
 import { listTrips } from "../../services/tripService";
+import { useAuthGuard } from "../../hooks/useAuthGuard";
 
 const PAGE_SIZE = 10;
 
 export default function MyTripsPage() {
+  useAuthGuard();
   const router = useRouter();
   const [trips, setTrips]     = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);

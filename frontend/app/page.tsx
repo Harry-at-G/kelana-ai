@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { createTrip, type CreateTripPayload } from "../services/tripService";
 import { type Trip } from "../components/TripCard";
+import { useAuthGuard } from "../hooks/useAuthGuard";
 
 const TRAVEL_STYLES = [
   "Adventure", "Backpacker", "Business", "Cultural", "Family", "Solo", "Couple", "Luxury", "Relaxed",
 ];
 
 export default function Home() {
+  useAuthGuard();
   const router = useRouter();
   const [form, setForm] = useState({
     destination: "",

@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getMe, clearSession, type UserProfile } from "../../services/authService";
+import { useAuthGuard } from "../../hooks/useAuthGuard";
 
 export default function ProfilePage() {
+  useAuthGuard();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);

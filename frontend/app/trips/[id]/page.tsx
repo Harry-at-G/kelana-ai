@@ -6,6 +6,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { type Trip, CATEGORY_COLOR, getDestinationFlag } from "../../../components/TripCard";
 import { getTrip } from "../../../services/tripService";
+import { useAuthGuard } from "../../../hooks/useAuthGuard";
 
 const CATEGORY_ICON: Record<string, string> = {
   Backpacker: "🎒",
@@ -19,6 +20,7 @@ function splitDays(text: string): string[] {
 }
 
 export default function TripDetailPage() {
+  useAuthGuard();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [trip, setTrip]       = useState<Trip | null>(null);
