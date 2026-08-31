@@ -45,7 +45,12 @@ export default function Home() {
       setResult(data);
       router.push("/trips");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      const msg = err instanceof Error ? err.message : "Something went wrong.";
+      if (msg.includes("Not authenticated") || msg.includes("401")) {
+        router.push("/login");
+        return;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }

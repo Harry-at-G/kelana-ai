@@ -1,22 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { type Trip, CATEGORY_COLOR, getDestinationFlag } from "../../../components/TripCard";
+import { getTrip } from "../../../services/tripService";
 
 const CATEGORY_ICON: Record<string, string> = {
   Backpacker: "🎒",
   Standard:   "⭐",
   Luxury:     "💎",
 };
-import { getTrip } from "../../../services/tripService";
 
-/**
- * Split the full AI markdown into one chunk per day.
- * Handles headings like: "## Day 1 ...", "**Day 1 ...**", "Day 1:"
- */
 function splitDays(text: string): string[] {
   const chunks = text.split(/(?=(?:^|\n)\s*(?:#{1,4} |\*{0,2})Day \d+)/i);
   return chunks.map((c) => c.trim()).filter(Boolean);
@@ -24,6 +20,7 @@ function splitDays(text: string): string[] {
 
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [trip, setTrip]       = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
@@ -35,7 +32,12 @@ export default function TripDetailPage() {
       const data = await getTrip(id);
       setTrip(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      const msg = err instanceof Error ? err.message : "Something went wrong.";
+      if (msg.includes("Not authenticated") || msg.includes("401")) {
+        router.push("/login");
+        return;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }

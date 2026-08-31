@@ -1,12 +1,23 @@
 import { type Trip } from "../components/TripCard";
+import { getToken } from "./authService";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
 export interface CreateTripPayload {
-  destination: string;
-  days: number;
-  budget: number;
+  destination:  string;
+  days:         number;
+  budget:       number;
   travel_style: string;
+}
+
+/** Build auth headers, throwing if no token is stored. */
+function authHeaders(): HeadersInit {
+  const token = getToken();
+  if (!token) throw new Error("Not authenticated. Please sign in.");
+  return {
+    "Content-Type":  "application/json",
+    "Authorization": `Bearer ${token}`,
+  };
 }
 
 /**
@@ -14,9 +25,9 @@ export interface CreateTripPayload {
  */
 export async function createTrip(payload: CreateTripPayload): Promise<Trip> {
   const res = await fetch(`${BASE_URL}/trips`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    method:  "POST",
+    headers: authHeaders(),
+    body:    JSON.stringify(payload),
   });
 
   if (!res.ok) {
@@ -28,13 +39,16 @@ export async function createTrip(payload: CreateTripPayload): Promise<Trip> {
 }
 
 /**
- * GET /api/v1/trips — list all trips, sorted newest first.
+ * GET /api/v1/trips — list trips for the authenticated user, sorted newest first.
  */
 export async function listTrips(): Promise<Trip[]> {
-  const res = await fetch(`${BASE_URL}/trips`);
+  const res = await fetch(`${BASE_URL}/trips`, {
+    headers: authHeaders(),
+  });
 
   if (!res.ok) {
-    throw new Error(`Error ${res.status} — GET ${BASE_URL}/trips`);
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.detail ?? `Error ${res.status}`);
   }
 
   const data: Trip[] = await res.json();
@@ -47,10 +61,13 @@ export async function listTrips(): Promise<Trip[]> {
  * GET /api/v1/trips/:id — fetch a single trip by ID.
  */
 export async function getTrip(id: string | number): Promise<Trip> {
-  const res = await fetch(`${BASE_URL}/trips/${id}`);
+  const res = await fetch(`${BASE_URL}/trips/${id}`, {
+    headers: authHeaders(),
+  });
 
   if (!res.ok) {
-    throw new Error(`Error ${res.status} — GET ${BASE_URL}/trips/${id}`);
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.detail ?? `Error ${res.status}`);
   }
 
   return res.json();

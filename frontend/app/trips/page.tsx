@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import TripCard, { type Trip } from "../../components/TripCard";
 import { listTrips } from "../../services/tripService";
@@ -8,6 +9,7 @@ import { listTrips } from "../../services/tripService";
 const PAGE_SIZE = 10;
 
 export default function MyTripsPage() {
+  const router = useRouter();
   const [trips, setTrips]     = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
@@ -21,7 +23,12 @@ export default function MyTripsPage() {
       const data = await listTrips();
       setTrips(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      const msg = err instanceof Error ? err.message : "Something went wrong.";
+      if (msg.includes("Not authenticated") || msg.includes("401")) {
+        router.push("/login");
+        return;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
