@@ -6,6 +6,8 @@ from models.user import User
 from database import SessionLocal, init_db
 from services.bedrock_service import get_ai_recommendation
 from services.auth_service import register_user, login_user, create_token, decode_token
+from services.kb_service import ask_knowledge_base
+
 import jwt
 
 app = FastAPI()
@@ -16,7 +18,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "http://192.168.1.48:3000",
+        "http://192.168.1.20:3000",
     ],
     allow_methods=["*"],
     allow_headers=["*"],
@@ -68,6 +70,10 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email:    EmailStr
     password: str
+
+
+class QuestionRequest(BaseModel):
+    question: str
 # FastAPI validates the JSON body against this model
 # If a field is missing or wrong type, it returns 422 automatically
 
@@ -209,51 +215,71 @@ def get_trip(trip_id: int, current_user: dict = Depends(get_current_user)):
     return trip
 
 @app.delete("/api/v1/trips/{id}")
-def delete_trip(id:int):
-    db= SessionLocal()
+@app.delete("/api/v1/trips/{id}")
+def delete_trip(id: int, current_user: dict = Depends(get_current_user)):
+    db   = SessionLocal()
     trip = db.query(Trip).filter(Trip.id == id).first()
-    # handling if not found
     if trip is None:
         db.close()
         raise HTTPException(status_code=404, detail=f"Trip with id {id} not found")
+    if trip.user_id != int(current_user["sub"]):
+        db.close()
+        raise HTTPException(status_code=403, detail="Forbidden: you do not own this trip")
     db.delete(trip)
     db.commit()
     db.close()
-    return (f"Trip with id {id} deleted successfully")    
+    return {"message": f"Trip with id {id} deleted successfully"}
 
-@app.put ("/api/v1/trips/{id}")
-def update_trip(id:int, budget:float):
-    db = SessionLocal()
-    trip=db.query(Trip).filter(Trip.id == id).first()
-    # handling if not found
+@app.put("/api/v1/trips/{id}")
+def update_trip(id: int, budget: float, current_user: dict = Depends(get_current_user)):
+    db   = SessionLocal()
+    trip = db.query(Trip).filter(Trip.id == id).first()
     if trip is None:
         db.close()
         raise HTTPException(status_code=404, detail=f"Trip with id {id} not found")
-    trip.budget = budget
-    trip.daily_budget = calculate_daily_budget(budget,trip.days)
-    trip.category = get_trip_category(budget)
+    if trip.user_id != int(current_user["sub"]):
+        db.close()
+        raise HTTPException(status_code=403, detail="Forbidden: you do not own this trip")
+    trip.budget       = budget
+    trip.daily_budget = calculate_daily_budget(budget, trip.days)
+    trip.category     = get_trip_category(budget)
     db.commit()
     db.close()
-    return (f"Trip with id {id} updated successfully")    
+    return {"message": f"Trip with id {id} updated successfully"}
 
 
-@app.put ("/api/v1/trips/{id}/generate")
-def update_trip_with_AI_recommendations(id:int, budget:float, travel_style:str):
-    db = SessionLocal()
-    trip=db.query(Trip).filter(Trip.id == id).first()
-    # handling if not found
+@app.put("/api/v1/trips/{id}/generate")
+def update_trip_with_AI_recommendations(
+    id: int, budget: float, travel_style: str,
+    current_user: dict = Depends(get_current_user)
+):
+    db   = SessionLocal()
+    trip = db.query(Trip).filter(Trip.id == id).first()
     if trip is None:
         db.close()
         raise HTTPException(status_code=404, detail=f"Trip with id {id} not found")
-    trip.budget = budget
-    trip.daily_budget = calculate_daily_budget(budget,trip.days)
-    trip.category = get_trip_category(budget)
+    if trip.user_id != int(current_user["sub"]):
+        db.close()
+        raise HTTPException(status_code=403, detail="Forbidden: you do not own this trip")
+    trip.budget       = budget
+    trip.daily_budget = calculate_daily_budget(budget, trip.days)
+    trip.category     = get_trip_category(budget)
     trip.ai_recommendation = get_ai_recommendation(
-        destination = trip.destination,
-        days=trip.days,
-        budget=trip.budget,
-        travel_style= travel_style,
+        destination  = trip.destination,
+        days         = trip.days,
+        budget       = trip.budget,
+        travel_style = travel_style,
     )
     db.commit()
     db.close()
-    return (f"Trip with id {id} updated with AI recommendation successfully")    
+    return {"message": f"Trip with id {id} updated with AI recommendation successfully"}
+
+@app.post("/api/v1/ask")
+def ask_endpoint(request: QuestionRequest):
+    result = ask_knowledge_base(request.question)
+    return {
+        "question": request.question,
+        "answer":   result["answer"],
+        "sources":  result["sources"],
+    }
+

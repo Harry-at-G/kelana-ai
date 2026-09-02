@@ -8,6 +8,7 @@ import { getStoredUser, clearSession, type AuthUser } from "../services/authServ
 const NAV_ITEMS = [
   { label: "Plan a Trip", href: "/" },
   { label: "My Trips",    href: "/trips" },
+  { label: "Ask",      href: "/assistant" },
 ];
 
 export default function Navbar() {
