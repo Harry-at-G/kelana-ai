@@ -3,8 +3,9 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from models.trip import Trip
 from models.user import User
+from models.conversation import Conversation, Message
 from database import SessionLocal, init_db
-from services.bedrock_service import get_ai_recommendation
+from services.bedrock_service import get_ai_recommendation, detect_trip_intent, chat_with_bedrock
 from services.auth_service import register_user, login_user, create_token, decode_token
 from services.kb_service import ask_knowledge_base
 
@@ -18,7 +19,6 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "http://192.168.1.20:3000",
     ],
     allow_methods=["*"],
     allow_headers=["*"],
@@ -74,6 +74,18 @@ class LoginRequest(BaseModel):
 
 class QuestionRequest(BaseModel):
     question: str
+
+
+class ConversationRequest(BaseModel):
+    title: str
+
+
+class ConversationRenameRequest(BaseModel):
+    title: str
+
+
+class MessageRequest(BaseModel):
+    content: str
 # FastAPI validates the JSON body against this model
 # If a field is missing or wrong type, it returns 422 automatically
 
@@ -273,6 +285,180 @@ def update_trip_with_AI_recommendations(
     db.commit()
     db.close()
     return {"message": f"Trip with id {id} updated with AI recommendation successfully"}
+
+@app.post("/api/v1/conversations", status_code=201)
+def create_conversation(
+    request: ConversationRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create a new conversation (topic) for the authenticated user."""
+    db = SessionLocal()
+    try:
+        conv = Conversation(
+            user_id = int(current_user["sub"]),
+            title   = request.title.strip(),
+        )
+        db.add(conv)
+        db.commit()
+        db.refresh(conv)
+        return {
+            "id":         conv.id,
+            "title":      conv.title,
+            "created_at": conv.created_at,
+            "messages":   [],
+        }
+    finally:
+        db.close()
+
+
+@app.get("/api/v1/conversations")
+def list_conversations(current_user: dict = Depends(get_current_user)):
+    """List all conversations for the authenticated user, newest first."""
+    db = SessionLocal()
+    try:
+        convs = (
+            db.query(Conversation)
+            .filter(Conversation.user_id == int(current_user["sub"]))
+            .order_by(Conversation.created_at.desc())
+            .all()
+        )
+        return [
+            {"id": c.id, "title": c.title, "created_at": c.created_at}
+            for c in convs
+        ]
+    finally:
+        db.close()
+
+
+@app.patch("/api/v1/conversations/{conv_id}")
+def rename_conversation(
+    conv_id: int,
+    request: ConversationRenameRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Rename a conversation title."""
+    db = SessionLocal()
+    try:
+        conv = db.query(Conversation).filter(
+            Conversation.id      == conv_id,
+            Conversation.user_id == int(current_user["sub"]),
+        ).first()
+        if not conv:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        conv.title = request.title.strip()
+        db.commit()
+        db.refresh(conv)
+        return {"id": conv.id, "title": conv.title, "created_at": conv.created_at}
+    finally:
+        db.close()
+
+
+@app.get("/api/v1/conversations/{conv_id}")
+def get_conversation(conv_id: int, current_user: dict = Depends(get_current_user)):
+    """Get a conversation with all its messages."""
+    db = SessionLocal()
+    try:
+        conv = db.query(Conversation).filter(
+            Conversation.id      == conv_id,
+            Conversation.user_id == int(current_user["sub"]),
+        ).first()
+        if not conv:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        return {
+            "id":         conv.id,
+            "title":      conv.title,
+            "created_at": conv.created_at,
+            "messages": [
+                {"id": m.id, "role": m.role, "content": m.content, "created_at": m.created_at}
+                for m in conv.messages
+            ],
+        }
+    finally:
+        db.close()
+
+
+@app.post("/api/v1/conversations/{conv_id}/messages", status_code=201)
+def send_message(
+    conv_id: int,
+    request: MessageRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Append a user message to the conversation, call AI for a reply,
+    persist both, and return the assistant message.
+    """
+    db = SessionLocal()
+    try:
+        conv = db.query(Conversation).filter(
+            Conversation.id      == conv_id,
+            Conversation.user_id == int(current_user["sub"]),
+        ).first()
+        if not conv:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+        # Persist user message
+        user_msg = Message(
+            conversation_id = conv_id,
+            role            = "user",
+            content         = request.content,
+        )
+        db.add(user_msg)
+        db.flush()
+
+        # Build history for context (last 10 messages, excluding the message just added)
+        history = [
+            {"role": m.role, "content": m.content}
+            for m in conv.messages[:-1][-10:]
+        ]
+
+        # Detect if the user wants a trip plan
+        trip_intent = detect_trip_intent(request.content)
+        trip_plan   = None
+
+        if trip_intent:
+            # Generate full itinerary via Bedrock
+            itinerary = get_ai_recommendation(
+                destination  = trip_intent.get("destination", ""),
+                days         = int(trip_intent.get("days", 3)),
+                budget       = float(trip_intent.get("budget", 1000)),
+                travel_style = trip_intent.get("travel_style", "Cultural"),
+            )
+            ai_response = itinerary
+            trip_plan   = {
+                "destination":  trip_intent.get("destination", ""),
+                "days":         int(trip_intent.get("days", 3)),
+                "budget":       float(trip_intent.get("budget", 1000)),
+                "travel_style": trip_intent.get("travel_style", "Cultural"),
+                "itinerary":    itinerary,
+            }
+        else:
+            # General conversation — talk directly with Bedrock
+            ai_response = chat_with_bedrock(history, request.content)
+
+        # Persist assistant message
+        assistant_msg = Message(
+            conversation_id = conv_id,
+            role            = "assistant",
+            content         = ai_response,
+        )
+        db.add(assistant_msg)
+        db.commit()
+        db.refresh(assistant_msg)
+
+        response_data = {
+            "id":         assistant_msg.id,
+            "role":       assistant_msg.role,
+            "content":    assistant_msg.content,
+            "created_at": assistant_msg.created_at,
+            "sources":    [],
+        }
+        if trip_plan:
+            response_data["trip_plan"] = trip_plan
+
+        return response_data
+    finally:
+        db.close()
+
 
 @app.post("/api/v1/ask")
 def ask_endpoint(request: QuestionRequest):
