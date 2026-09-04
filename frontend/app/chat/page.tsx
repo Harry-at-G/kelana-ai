@@ -34,10 +34,22 @@ export default function ChatPage() {
   const [savedIds,      setSavedIds]      = useState<Set<number>>(new Set());
   const [renamingId,    setRenamingId]    = useState<number | null>(null);
   const [renameValue,   setRenameValue]   = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const bottomRef   = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { loadConversations(); }, []);
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  // Smooth scroll on new message sent/received
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Instant scroll when switching conversations
+  useEffect(() => {
+    if (messagesRef.current) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    }
+  }, [activeConv?.id]);
 
   async function loadConversations() {
     try {
@@ -217,18 +229,51 @@ export default function ChatPage() {
 
       {/* ── Chat window ── */}
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="bg-white border-b border-gray-100 px-5 py-3.5 flex items-center gap-2">
+        {/* Chat header */}
+        <div className="bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between gap-3">
           {activeConv ? (
-            <>
-              <span className="text-sm font-bold text-gray-800 truncate">{activeConv.title}</span>
-              <span className="text-xs text-gray-400 ml-1">· {messages.length} message{messages.length !== 1 ? "s" : ""}</span>
-            </>
+            <div className="flex items-center gap-3 min-w-0">
+              {/* Icon */}
+              <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-lg shrink-0">
+                💬
+              </div>
+              {/* Title + meta */}
+              <div className="flex flex-col min-w-0">
+                <span className="text-base font-bold text-gray-800 truncate leading-tight">
+                  {activeConv.title}
+                </span>
+                <span className="text-xs text-gray-400">
+                  {new Date(activeConv.created_at).toLocaleDateString("en-US", {
+                    year: "numeric", month: "short", day: "numeric",
+                  })}
+                  {messages.length > 0 && (
+                    <span className="ml-2">· {messages.length} message{messages.length !== 1 ? "s" : ""}</span>
+                  )}
+                </span>
+              </div>
+            </div>
           ) : (
-            <span className="text-sm text-gray-400">Select a topic or create a new one</span>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-lg shrink-0">
+                💬
+              </div>
+              <span className="text-sm text-gray-400">Select a topic or create a new one</span>
+            </div>
+          )}
+
+          {/* Rename button in header */}
+          {activeConv && (
+            <button
+              onClick={() => { setRenamingId(activeConv.id); setRenameValue(activeConv.title); }}
+              className="shrink-0 text-gray-300 hover:text-blue-400 transition-colors text-sm"
+              title="Rename conversation"
+            >
+              ✏️
+            </button>
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+        <div ref={messagesRef} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
           {!activeConv && (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
               <span className="text-5xl">💬</span>
@@ -303,6 +348,13 @@ export default function ChatPage() {
                     onSave={() => handleSaveTrip(msg.id, msg.trip_plan!)}
                     onView={() => router.push("/trips")}
                   />
+                )}
+
+                {/* Timestamp */}
+                {msg.content !== "" && (
+                  <span className={`text-xs text-gray-400 px-1 ${msg.role === "user" ? "self-end" : "self-start"}`}>
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
                 )}
               </div>
 
