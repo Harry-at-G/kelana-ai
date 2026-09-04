@@ -9,6 +9,7 @@ import {
   listConversations,
   getConversation,
   sendMessage,
+  renameConversation,
   type Conversation,
   type ChatMessage,
   type Source,
@@ -31,6 +32,8 @@ export default function ChatPage() {
   const [chatError,     setChatError]     = useState<string | null>(null);
   const [savingId,      setSavingId]      = useState<number | null>(null);
   const [savedIds,      setSavedIds]      = useState<Set<number>>(new Set());
+  const [renamingId,    setRenamingId]    = useState<number | null>(null);
+  const [renameValue,   setRenameValue]   = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { loadConversations(); }, []);
@@ -67,6 +70,20 @@ export default function ChatPage() {
       handleSelectConversation(conv);
     } catch (err: unknown) {
       setSidebarError(err instanceof Error ? err.message : "Failed to create conversation.");
+    }
+  }
+
+  async function handleRename(conv: Conversation) {
+    const trimmed = renameValue.trim();
+    if (!trimmed || trimmed === conv.title) { setRenamingId(null); return; }
+    try {
+      const updated = await renameConversation(conv.id, trimmed);
+      setConversations((prev) => prev.map((c) => c.id === conv.id ? { ...c, title: updated.title } : c));
+      if (activeConv?.id === conv.id) setActiveConv((a) => a ? { ...a, title: updated.title } : a);
+    } catch (err: unknown) {
+      setSidebarError(err instanceof Error ? err.message : "Failed to rename.");
+    } finally {
+      setRenamingId(null);
     }
   }
 
@@ -151,17 +168,49 @@ export default function ChatPage() {
           {conversations.length === 0 ? (
             <p className="text-xs text-gray-400 px-4 py-3 text-center">No topics yet. Click + to create one.</p>
           ) : conversations.map((conv) => (
-            <button key={conv.id} onClick={() => handleSelectConversation(conv)}
-              className={`w-full text-left px-4 py-3 flex flex-col gap-0.5 transition-colors ${
-                activeConv?.id === conv.id ? "bg-blue-50 border-r-2 border-blue-400" : "hover:bg-gray-50"
-              }`}>
-              <span className={`text-sm font-medium truncate ${activeConv?.id === conv.id ? "text-blue-600" : "text-gray-700"}`}>
-                {conv.title}
-              </span>
-              <span className="text-xs text-gray-400">
-                {new Date(conv.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-              </span>
-            </button>
+            <div key={conv.id} className={`group flex items-center transition-colors ${
+              activeConv?.id === conv.id ? "bg-blue-50 border-r-2 border-blue-400" : "hover:bg-gray-50"
+            }`}>
+              {renamingId === conv.id ? (
+                /* Inline rename input */
+                <form
+                  className="flex-1 flex items-center gap-1 px-3 py-2"
+                  onSubmit={(e) => { e.preventDefault(); handleRename(conv); }}
+                >
+                  <input
+                    autoFocus
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onBlur={() => handleRename(conv)}
+                    onKeyDown={(e) => e.key === "Escape" && setRenamingId(null)}
+                    className="flex-1 text-sm bg-white border border-blue-300 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-blue-300"
+                  />
+                </form>
+              ) : (
+                /* Normal row */
+                <button
+                  className="flex-1 text-left px-4 py-3 flex flex-col gap-0.5"
+                  onClick={() => handleSelectConversation(conv)}
+                >
+                  <span className={`text-sm font-medium truncate ${activeConv?.id === conv.id ? "text-blue-600" : "text-gray-700"}`}>
+                    {conv.title}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {new Date(conv.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </span>
+                </button>
+              )}
+              {/* Rename pencil button — visible on hover */}
+              {renamingId !== conv.id && (
+                <button
+                  onClick={() => { setRenamingId(conv.id); setRenameValue(conv.title); }}
+                  className="opacity-0 group-hover:opacity-100 shrink-0 mr-2 text-gray-300 hover:text-blue-400 transition-all"
+                  title="Rename"
+                >
+                  ✏️
+                </button>
+              )}
+            </div>
           ))}
         </div>
       </aside>

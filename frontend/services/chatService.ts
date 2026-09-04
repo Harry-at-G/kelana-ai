@@ -79,6 +79,20 @@ export async function getConversation(id: number): Promise<Conversation> {
   return res.json();
 }
 
+/** PATCH /api/v1/conversations/:id — rename a conversation. */
+export async function renameConversation(id: number, title: string): Promise<Conversation> {
+  const res = await fetch(`${BASE_URL}/conversations/${id}`, {
+    method:  "PATCH",
+    headers: authHeaders(),
+    body:    JSON.stringify({ title }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.detail ?? `Error ${res.status}`);
+  }
+  return res.json();
+}
+
 /** POST /api/v1/conversations/:id/messages — send a message, get AI reply. */
 export async function sendMessage(convId: number, content: string): Promise<ChatMessage> {
   const res = await fetch(`${BASE_URL}/conversations/${convId}/messages`, {

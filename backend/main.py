@@ -19,6 +19,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
+        "https://kelana-ai-theta.vercel.app",
     ],
     allow_methods=["*"],
     allow_headers=["*"],
@@ -226,7 +227,6 @@ def get_trip(trip_id: int, current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
     return trip
 
-@app.delete("/api/v1/trips/{id}")
 @app.delete("/api/v1/trips/{id}")
 def delete_trip(id: int, current_user: dict = Depends(get_current_user)):
     db   = SessionLocal()
