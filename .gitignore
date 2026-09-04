@@ -1,7 +1,21 @@
 .DS_Store
+
+# Environment files — never commit secrets
 .env
 .env.local
+.env.*.local
+*.env
+*.env.local
+*.env.backup
+*.env.local.backup
+
+# Python
 backend/.venv
 backend/__pycache__
 backend/services/__pycache__
 backend/models/__pycache__
+backend/**/__pycache__
+
+# Next.js
+frontend/.next
+frontend/node_modules
