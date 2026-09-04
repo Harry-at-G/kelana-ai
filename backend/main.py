@@ -19,6 +19,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://192.168.1.20:3000",
+        "https://kelana-ai-theta.vercel.app",
     ],
     allow_methods=["*"],
     allow_headers=["*"],
