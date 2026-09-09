@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 // Pages that are accessible without authentication
 const PUBLIC_PATHS = ["/login", "/register"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Always allow public auth pages
@@ -24,6 +24,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Only run on page routes — exclude Next.js internals, static files and API routes
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/).*)",],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|api/).*)",
+  ],
 };
