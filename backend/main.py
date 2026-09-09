@@ -23,7 +23,7 @@ app.add_middleware(
         "https://kelana-ai-cf2dab09.fastapicloud.dev",
         os.getenv("FRONTEND_URL", ""),
     ],
-    allow_origin_regex=r"https://kelana-ai.*\.vercel\.app",
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_methods=["*"],
     allow_headers=["*"],
 )
