@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export const runtime = "experimental-edge";
-
 // Pages that are accessible without authentication
 const PUBLIC_PATHS = ["/login", "/register"];
 
@@ -26,8 +24,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Only run on page routes — exclude all Next.js internals, static files and API routes
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/).*)",
-  ],
+  // Only run on page routes — exclude Next.js internals, static files and API routes
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/).*)",],
 };
