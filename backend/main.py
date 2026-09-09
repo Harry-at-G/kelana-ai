@@ -19,11 +19,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://kelana-q1pmlwtn1-wirawan.vercel.app",
-        "https://kelana-ai-theta.vercel.app",
+        "https://kelana-ai-hazel.vercel.app",
         "https://kelana-ai-cf2dab09.fastapicloud.dev",
         os.getenv("FRONTEND_URL", ""),
     ],
+    allow_origin_regex=r"https://kelana-ai.*\.vercel\.app",
     allow_methods=["*"],
     allow_headers=["*"],
 )
