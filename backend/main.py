@@ -20,6 +20,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://kelana-q1pmlwtn1-wirawan.vercel.app",
+        "https://kelana-ai-theta.vercel.app",
+        "https://kelana-ai-cf2dab09.fastapicloud.dev",
         os.getenv("FRONTEND_URL", ""),
     ],
     allow_methods=["*"],
