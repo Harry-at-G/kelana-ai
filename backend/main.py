@@ -8,7 +8,7 @@ from database import SessionLocal, init_db
 from services.bedrock_service import get_ai_recommendation, detect_trip_intent, chat_with_bedrock
 from services.auth_service import register_user, login_user, create_token, decode_token
 from services.kb_service import ask_knowledge_base
-
+import os
 import jwt
 
 app = FastAPI()
@@ -19,7 +19,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://kelana-ai-theta.vercel.app",
+        "https://kelana-q1pmlwtn1-wirawan.vercel.app",
+        os.getenv("FRONTEND_URL", ""),
     ],
     allow_methods=["*"],
     allow_headers=["*"],
